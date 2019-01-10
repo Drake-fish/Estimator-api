@@ -3,6 +3,9 @@ require 'rails_helper'
 RSpec.describe 'Projects API', type: :request do
   let!(:projects) {create_list(:project, 10)}
   let(:project_id) {projects.first.id}
+  let!(:estimates) { create_list(:estimate, 20, project_id: projects.first.id) }
+  let(:id) { estimates.first.id }
+
 
   describe 'GET /projects' do
     before {get '/projects'}
@@ -43,6 +46,104 @@ RSpec.describe 'Projects API', type: :request do
       end
     end
   end
+
+  describe 'GET /calculate/:id' do
+    before { get "/calculate/#{id}"}
+
+    context 'when the record exists' do
+      it 'returns the estimate' do
+        expect(json).not_to be_empty
+      end
+      it 'returns a status code of 200' do
+        expect(response).to have_http_status(200)
+      end
+    end
+
+    context 'when the record does not exist' do
+      let(:id) { 200 }
+      it 'returns status code of 404' do
+        expect(response).to have_http_status(404)
+      end
+
+      it 'returns a not found message' do
+        expect(response.body).to match(/Couldn't find Estimate with 'id'=200/)
+      end
+    end
+  end
+
+  describe 'GET /calculate/:id/weighted' do
+    before { get "/calculate/#{id}/weighted"}
+
+    context 'when the record exists' do
+      it 'returns the estimate' do
+        expect(json).not_to be_empty
+      end
+      it 'returns a status code of 200' do
+        expect(response).to have_http_status(200)
+      end
+    end
+
+    context 'when the record does not exist' do
+      let(:id) { 200 }
+      it 'returns status code of 404' do
+        expect(response).to have_http_status(404)
+      end
+
+      it 'returns a not found message' do
+        expect(response.body).to match(/Couldn't find Estimate with 'id'=200/)
+      end
+    end
+  end
+
+  describe 'GET /calculate/all/:id' do
+    before { get "/calculate/all/#{id}"}
+
+    context 'when the record exists' do
+      it 'returns the averages added together' do
+        expect(json).to_not be_empty
+      end
+      it 'returns a status code of 200' do
+        expect(response).to have_http_status(200)
+      end
+    end
+
+    context 'when the record does not exist' do
+      let(:id) { 200 }
+      it 'returns status code of 404' do
+        expect(response).to have_http_status(404)
+      end
+
+      it 'returns a not found message' do
+        expect(response.body).to match(/Couldn't find Project with 'id'=200/)
+      end
+    end
+  end
+
+  describe 'GET /calculate/all/weighted/:id' do
+    before { get "/calculate/all/weighted/#{id}"}
+
+    context 'when the record exists' do
+      it 'returns the averages added together' do
+        expect(json).to_not be_empty
+      end
+      it 'returns a status code of 200' do
+        expect(response).to have_http_status(200)
+      end
+    end
+
+    context 'when the record does not exist' do
+      let(:id) { 200 }
+      it 'returns status code of 404' do
+        expect(response).to have_http_status(404)
+      end
+
+      it 'returns a not found message' do
+        expect(response.body).to match(/Couldn't find Project with 'id'=200/)
+      end
+    end
+  end
+
+
 
 
   describe 'POST /projects' do

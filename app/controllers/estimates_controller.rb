@@ -25,6 +25,7 @@ class EstimatesController < ApplicationController
     head :no_content
   end
 
+
   private
 
   def estimate_params
@@ -36,7 +37,7 @@ class EstimatesController < ApplicationController
   end
 
   def set_project_estimate
-    @estimate = @project.estimates.find_by!(id: params[:id]) if @project 
+    @estimate = @project.estimates.find_by!(id: params[:id]) if @project
   end
 
 end

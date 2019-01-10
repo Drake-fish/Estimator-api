@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe 'Projects API', type: :request do
+RSpec.describe 'Estimates API', type: :request do
 
   let!(:project) { create(:project) }
   let!(:estimates) { create_list(:estimate, 20, project_id: project.id) }
