@@ -56,7 +56,6 @@ class ProjectsController < ApplicationController
       estimates.each do | estimate |
         response[:average] += average_numbers(estimate.optimistic, estimate.realistic, estimate.pessimistic)
         response[:standard_deviation] += standard_deviation(estimate.pessimistic, estimate.optimistic)
-
       end
     end
     response
