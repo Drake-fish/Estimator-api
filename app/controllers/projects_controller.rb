@@ -4,7 +4,7 @@ class ProjectsController < ApplicationController
   before_action :set_project, only: [:show, :update, :destroy]
 
   def index
-    @projects = Project.includes(:estimates).all
+    @projects = Project.includes(:estimates).all.order(:created_at)
     calculated_time = average_time_for_all_projects(@projects)
     json_response({projects: @projects,
                    total_projects: @projects.length,
