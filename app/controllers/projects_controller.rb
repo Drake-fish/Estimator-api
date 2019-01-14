@@ -1,9 +1,40 @@
+require 'json'
+
 class ProjectsController < ApplicationController
   before_action :set_project, only: [:show, :update, :destroy]
 
   def index
-    @projects = Project.all
-    json_response(@projects)
+    @projects = Project.includes(:estimates).all
+    calculated_time = average_time_for_all_projects(@projects)
+    json_response({projects: @projects,
+                   total_projects: @projects.length,
+                   average_time: calculated_time[:average],
+                   weighted_time: calculated_time[:weighted],
+                   standard_deviation: calculated_time[:standard_deviation] })
+  end
+
+
+  def average_time_for_all_projects (projects)
+    response = {average: 0, weighted: 0, standard_deviation: 0}
+    projects.each do | project |
+      project_totals = average_time_for_project(project)
+      response[:average] += project_totals[:average]
+      response[:weighted] += project_totals[:weighted]
+      response[:standard_deviation] += project_totals[:standard_deviation]
+    end
+    response
+  end
+
+  def average_time_for_project(project)
+    response = { average: 0, weighted: 0, standard_deviation: 0 }
+    project.estimates.each do | estimate |
+      average_json = JSON.parse(`thor estimator:estimate #{estimate.optimistic} #{estimate.realistic} #{estimate.pessimistic} -j`)
+      weighted_json = JSON.parse(`thor estimator:estimate #{estimate.optimistic} #{estimate.realistic} #{estimate.pessimistic} -j -w`)
+      response[:average] += average_json["average"].to_f.round(2)
+      response[:weighted] += weighted_json["average"].to_f.round(2)
+      response[:standard_deviation] += average_json["standardDeviation"].to_f.round(2)
+    end
+    response
   end
 
   def create
@@ -12,7 +43,14 @@ class ProjectsController < ApplicationController
   end
 
   def show
-    json_response(@project)
+    calculated_time = average_time_for_project(@project)
+    json_response({
+                    project: @project,
+                    total_estimates: @project.estimates.length,
+                    average_time: calculated_time[:average],
+                    weighted_time: calculated_time[:weighted],
+                    standard_deviation: calculated_time[:standard_deviation]
+                  })
   end
 
   def update
@@ -23,54 +61,6 @@ class ProjectsController < ApplicationController
   def destroy
     @project.destroy
     head :no_content
-  end
-
-  def calculate_estimate
-    estimate = Estimate.find(params[:id])
-    json_response(`thor estimator:estimate #{estimate.optimistic} #{estimate.realistic} #{estimate.pessimistic} -j`)
-  end
-
-  def calculate_weighted
-    estimate = Estimate.find(params[:id])
-    json_response(`thor estimator:estimate #{estimate.optimistic} #{estimate.realistic} #{estimate.pessimistic} -j -w`)
-  end
-
-  def average_all_estimates
-    estimates = Project.all_estimates(params)
-    json_response(calculate_average_of_all_estimates(estimates, false))
-  end
-
-  def average_all_weighted_estimates
-    estimates = Project.all_estimates(params)
-    json_response(calculate_average_of_all_estimates(estimates, true))
-  end
-
-  def calculate_average_of_all_estimates(estimates, weighted)
-    response = { average: 0, standard_deviation: 0 }
-    if weighted
-      estimates.each do | estimate |
-        response[:average] += average_weighted_numbers(estimate.optimistic, estimate.realistic, estimate.pessimistic)
-        response[:standard_deviation] += standard_deviation(estimate.pessimistic, estimate.optimistic)
-      end
-    else
-      estimates.each do | estimate |
-        response[:average] += average_numbers(estimate.optimistic, estimate.realistic, estimate.pessimistic)
-        response[:standard_deviation] += standard_deviation(estimate.pessimistic, estimate.optimistic)
-      end
-    end
-    response
-  end
-
-  def average_weighted_numbers(low, real, high)
-    ((low + real * 4 + high) / 6.0).round(2)
-  end
-
-  def average_numbers(low, real, high)
-    ((low + real + high) / 3.0).round(2)
-  end
-
-  def standard_deviation(low, high)
-    ((low - high) / 6.0).round(2)
   end
 
   private
