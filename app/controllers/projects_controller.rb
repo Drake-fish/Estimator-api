@@ -4,57 +4,47 @@ class ProjectsController < ApplicationController
   before_action :set_project, only: [:show, :update, :destroy]
 
   def index
-    @projects = Project.includes(:estimates).all.order(created_at: :desc)
-    calculated_time = average_time_for_all_projects(@projects)
-    json_response({projects: @projects,
-                   total_projects: @projects.length,
-                   average_time: calculated_time[:average],
-                   weighted_time: calculated_time[:weighted],
-                   standard_deviation: calculated_time[:standard_deviation] })
+    projects = Project.get_all_projects_and_estimates
+    optimistic = projects.average(:optimistic).to_f
+    realistic = projects.average(:realistic).to_f
+    pessimistic = projects.average(:pessimistic).to_f
+    average = calculate_time(optimistic, realistic, pessimistic)
+    weighted = calculate_weighted(optimistic, realistic, pessimistic)
+    standard_deviation = calculate_standard(pessimistic, optimistic)
+
+    json_response({
+      projects: projects,
+      total_projects: projects.count,
+      average_time: average,
+      weighted_time: weighted,
+      standard_deviation: standard_deviation
+    })
+
   end
 
-
-  def average_time_for_all_projects (projects)
-    response = {average: 0, weighted: 0, standard_deviation: 0}
-    projects.each do | project |
-      project_totals = average_time_for_project(project)
-      response[:average] += project_totals[:average]
-      response[:weighted] += project_totals[:weighted]
-      response[:standard_deviation] += project_totals[:standard_deviation]
-    end
-    response
-  end
-
-  def average_time_for_project(project)
-    response = { average: 0, weighted: 0, standard_deviation: 0 }
-    project.estimates.each do | estimate |
-      average_json = JSON.parse(`thor estimator:estimate #{estimate.optimistic} #{estimate.realistic} #{estimate.pessimistic} -j`)
-      weighted_json = JSON.parse(`thor estimator:estimate #{estimate.optimistic} #{estimate.realistic} #{estimate.pessimistic} -j -w`)
-      response[:average] += average_json["average"].to_f.round(2)
-      response[:weighted] += weighted_json["average"].to_f.round(2)
-      response[:standard_deviation] += average_json["standardDeviation"].to_f.round(2)
-    end
-    response
-  end
 
   def create
-    @project = Project.create!(project_params)
+    #create! will crash catestrophically. Change to normal create when in production. if true this else there was an error.
+    @project = Project.create(project_params)
     json_response(@project, :created)
   end
 
   def show
-    calculated_time = average_time_for_project(@project)
-    estimates_count = @project.estimates.length
-    minimum = @project.estimates.minimum('optimistic')
-    maximum = @project.estimates.maximum('pessimistic')
-    realistic = @project.estimates.maximum('realistic')
+    optimistic = @project.estimates.average(:optimistic)
+    realistic = @project.estimates.average(:realistic)
+    pessimistic = @project.estimates.average(:pessimistic)
+
+    estimates_count = @project.estimates.count
+    average = calculate_time(optimistic, realistic, pessimistic).to_f
+    weighted = calculate_weighted(optimistic, realistic, pessimistic).to_f
+    standard_deviation = calculate_standard(pessimistic, optimistic).to_f
     if estimates_count > 0
     json_response({
                     project: @project,
                     total_estimates: estimates_count,
-                    average_time: (calculated_time[:average] / estimates_count.to_f).round(2),
-                    weighted_time: ((minimum + realistic * 4 + maximum) / 6.to_f).round(2),
-                    standard_deviation: ((maximum - minimum).to_f / 6).round(2),
+                    average_time: average,
+                    weighted_time: weighted,
+                    standard_deviation: standard_deviation,
                   })
     else
       json_response ({
@@ -79,11 +69,23 @@ class ProjectsController < ApplicationController
 
   private
 
+  def calculate_time(low, real, high)
+    ((low + real + high) / 3).round(2)
+  end
+
+  def calculate_weighted(low, real, high)
+    ((low + real * 4 + high) / 6).round(2)
+  end
+
+  def calculate_standard(high, low)
+    ((high - low)/6).round(2)
+  end
+
   def project_params
     params.permit(:name, :description)
   end
 
   def set_project
-    @project = Project.find(params[:id])
+    @project = Project.includes(:estimates).find(params[:id])
   end
 end
