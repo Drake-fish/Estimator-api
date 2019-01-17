@@ -34,6 +34,9 @@ class ProjectsController < ApplicationController
       response[:weighted] += weighted_json["average"].to_f.round(2)
       response[:standard_deviation] += average_json["standardDeviation"].to_f.round(2)
     end
+    response[:average] = response[:average] / project.estimates.length.to_f.round(2)
+    response[:weighted] = response[:weighted] / project.estimates.length.to_f.round(2)
+    response[:standard_deviation] = response[:standard_deviation] / project.estimates.length.to_f.round(2)
     response
   end
 
