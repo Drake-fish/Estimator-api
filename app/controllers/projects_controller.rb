@@ -64,6 +64,7 @@ class ProjectsController < ApplicationController
         weighted_time: 0,
         standard_deviation: 0,
       })
+    end
   end
 
   def update
