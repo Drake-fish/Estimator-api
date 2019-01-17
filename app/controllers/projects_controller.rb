@@ -35,17 +35,20 @@ class ProjectsController < ApplicationController
     pessimistic = @project.estimates.average(:pessimistic)
 
     estimates_count = @project.estimates.count
-    average = calculate_time(optimistic, realistic, pessimistic).to_f
-    weighted = calculate_weighted(optimistic, realistic, pessimistic).to_f
-    standard_deviation = calculate_standard(pessimistic, optimistic).to_f
+
     if estimates_count > 0
-    json_response({
-                    project: @project,
-                    total_estimates: estimates_count,
-                    average_time: average,
-                    weighted_time: weighted,
-                    standard_deviation: standard_deviation,
-                  })
+
+      average = calculate_time(optimistic, realistic, pessimistic).to_f
+      weighted = calculate_weighted(optimistic, realistic, pessimistic).to_f
+      standard_deviation = calculate_standard(pessimistic, optimistic).to_f
+
+      json_response({
+                      project: @project,
+                      total_estimates: estimates_count,
+                      average_time: average,
+                      weighted_time: weighted,
+                      standard_deviation: standard_deviation,
+                    })
     else
       json_response ({
         project: @project,
