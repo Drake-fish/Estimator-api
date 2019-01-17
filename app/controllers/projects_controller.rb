@@ -52,7 +52,7 @@ class ProjectsController < ApplicationController
     json_response({
                     project: @project,
                     total_estimates: estimates_count,
-                    average_time: (calculated_time[:average] / project_count.to_f).round(2),
+                    average_time: (calculated_time[:average] / estimates_count.to_f).round(2),
                     weighted_time: ((minimum + realistic * 4 + maximum) / 6.to_f).round(2),
                     standard_deviation: ((maximum - minimum).to_f / 6).round(2),
                   })
