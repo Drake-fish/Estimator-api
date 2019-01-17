@@ -44,17 +44,26 @@ class ProjectsController < ApplicationController
 
   def show
     calculated_time = average_time_for_project(@project)
-    project_count = @project.estimates.length
+    estimates_count = @project.estimates.length
     minimum = @project.estimates.minimum('optimistic')
     maximum = @project.estimates.maximum('pessimistic')
     realistic = @project.estimates.maximum('realistic')
+    if estimates_count > 0
     json_response({
                     project: @project,
-                    total_estimates: project_count,
+                    total_estimates: estimates_count,
                     average_time: (calculated_time[:average] / project_count.to_f).round(2),
                     weighted_time: ((minimum + realistic * 4 + maximum) / 6.to_f).round(2),
-                    standard_deviation: ((maximum - minimum).to_f / 6).round(2) ,
+                    standard_deviation: ((maximum - minimum).to_f / 6).round(2),
                   })
+    else
+      json_response ({
+        project: @project,
+        total_estimates: estimates_count,
+        average_time: 0,
+        weighted_time: 0,
+        standard_deviation: 0,
+      })
   end
 
   def update
