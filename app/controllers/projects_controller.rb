@@ -34,9 +34,6 @@ class ProjectsController < ApplicationController
       response[:weighted] += weighted_json["average"].to_f.round(2)
       response[:standard_deviation] += average_json["standardDeviation"].to_f.round(2)
     end
-    response[:average] = response[:average] / project.estimates.length.to_f.round(2)
-    response[:weighted] = response[:weighted] / project.estimates.length.to_f.round(2)
-    response[:standard_deviation] = response[:standard_deviation] / project.estimates.length.to_f.round(2)
     response
   end
 
@@ -47,12 +44,16 @@ class ProjectsController < ApplicationController
 
   def show
     calculated_time = average_time_for_project(@project)
+    project_count = @project.estimates.length
+    minimum = @project.estimates.minimum('optimistic')
+    maximum = @project.estimates.maximum('pessimistic')
+    realistic = @project.estimates.maximum('realistic')
     json_response({
                     project: @project,
-                    total_estimates: @project.estimates.length,
-                    average_time: calculated_time[:average],
-                    weighted_time: calculated_time[:weighted],
-                    standard_deviation: calculated_time[:standard_deviation]
+                    total_estimates: project_count,
+                    average_time: (calculated_time[:average] / project_count.to_f).round(2),
+                    weighted_time: ((minimum + realistic * 4 + maximum) / 6.to_f).round(2),
+                    standard_deviation: ((maximum - minimum).to_f / 6).round(2) ,
                   })
   end
 
