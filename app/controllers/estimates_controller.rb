@@ -11,7 +11,7 @@ class EstimatesController < ApplicationController
   end
 
   def create
-    #change back to create regular. 
+    #change back to create regular.
     @project.estimates.create!(estimate_params)
     json_response(@project, :created)
   end
@@ -22,7 +22,7 @@ class EstimatesController < ApplicationController
   end
 
   def destroy
-    @project.destroy
+    @estimate.destroy
     head :no_content
   end
 
