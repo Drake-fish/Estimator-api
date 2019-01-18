@@ -57,6 +57,7 @@ class ProjectsController < ApplicationController
         average_time: 0,
         weighted_time: 0,
         standard_deviation: 0,
+        estimates: []
       })
     end
   end
