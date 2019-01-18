@@ -48,6 +48,7 @@ class ProjectsController < ApplicationController
                       average_time: average,
                       weighted_time: weighted,
                       standard_deviation: standard_deviation,
+                      estimates: @project.estimates
                     })
     else
       json_response ({

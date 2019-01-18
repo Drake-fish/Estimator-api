@@ -12,7 +12,7 @@ class EstimatesController < ApplicationController
 
   def create
     #change back to create regular.
-    @project.estimates.create!(estimate_params)
+    @project.estimates.create(estimate_params)
     json_response(@project, :created)
   end
 
