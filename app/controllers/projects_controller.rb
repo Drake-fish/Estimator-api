@@ -54,7 +54,7 @@ class ProjectsController < ApplicationController
         average_time: average_time,
         weighted_time: weighted_time,
         standard_deviation: standard_deviation,
-        estimate_count: estimates_count
+        total_estimates: estimates_count
       })
 
     else
@@ -75,7 +75,7 @@ class ProjectsController < ApplicationController
         average_time: calculate_time(opt, real, pess).to_f,
         weighted_time: calculate_weighted(opt, real, pess).to_f,
         standard_deviation: calculate_standard(pess, opt).to_f,
-        estimate_count: estimates_count
+        total_estimates: estimates_count
       })
     end
   end
