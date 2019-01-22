@@ -24,40 +24,58 @@ class ProjectsController < ApplicationController
 
 
   def create
-    #create! will crash catestrophically. Change to normal create when in production. if true this else there was an error.
     @project = Project.create(project_params)
     json_response(@project, :created)
   end
 
   def show
-    optimistic = @project.estimates.average(:optimistic)
-    realistic = @project.estimates.average(:realistic)
-    pessimistic = @project.estimates.average(:pessimistic)
+    if @project.root? && @project.children?
+      estimates_count = 0
+      average_time = 0
+      weighted_time = 0
+      standard_deviation = 0
 
-    estimates_count = @project.estimates.count
+      @project.children.each do |child|
+        estimates_count += child.estimates.count
+        opt = child.estimates.average(:optimistic)
+        real = child.estimates.average(:realistic)
+        pess = child.estimates.average(:pessimistic)
+        if child.estimates.count > 0
+          average_time += calculate_time(opt, real, pess).to_f
+          weighted_time += calculate_weighted(opt, real, pess).to_f
+          standard_deviation += calculate_standard(pess, opt).to_f
+        end
+      end
 
-    if estimates_count > 0
-
-      average = calculate_time(optimistic, realistic, pessimistic).to_f
-      weighted = calculate_weighted(optimistic, realistic, pessimistic).to_f
-      standard_deviation = calculate_standard(pessimistic, optimistic).to_f
-
-      json_response({
-                      project: @project,
-                      total_estimates: estimates_count,
-                      average_time: average,
-                      weighted_time: weighted,
-                      standard_deviation: standard_deviation,
-                      estimates: @project.estimates
-                    })
-    else
       json_response ({
         project: @project,
-        total_estimates: estimates_count,
-        average_time: 0,
-        weighted_time: 0,
-        standard_deviation: 0,
-        estimates: []
+        children: @project.children,
+        estimates: [],
+        average_time: average_time,
+        weighted_time: weighted_time,
+        standard_deviation: standard_deviation,
+        estimate_count: estimates_count
+      })
+
+    else
+      estimates_count = @project.estimates.count
+      if estimates_count > 0
+        opt = @project.estimates.average(:optimistic)
+        real = @project.estimates.average(:realistic)
+        pess = @project.estimates.average(:pessimistic)
+      else
+        opt = 0
+        real = 0
+        pess = 0
+      end
+      json_response ({
+        project: @project,
+        children: [],
+        estimates: @project.estimates,
+        average_time: calculate_time(opt, real, pess).to_f,
+        weighted_time: calculate_weighted(opt, real, pess).to_f,
+        standard_deviation: calculate_standard(pess, opt).to_f,
+        estimate_count: estimates_count
       })
     end
   end
@@ -87,7 +105,7 @@ class ProjectsController < ApplicationController
   end
 
   def project_params
-    params.permit(:name, :description)
+    params.permit(:name, :description, :parent_id)
   end
 
   def set_project
