@@ -48,7 +48,7 @@ class ProjectsController < ApplicationController
           children << {project: child,
                        average_time: calculate_time(opt, real, pess).to_f,
                        weighted_time: calculate_weighted(opt, real, pess).to_f,
-                       total_estimates: estimates_count,
+                       total_estimates: child.estimates.count,
                        standard_deviation: calculate_standard(pess, opt).to_f  }
         else
           children << {project: child,
