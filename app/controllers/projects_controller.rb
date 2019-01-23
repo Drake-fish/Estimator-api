@@ -117,7 +117,7 @@ class ProjectsController < ApplicationController
   end
 
   def project_params
-    params.permit(:name, :description, :parent_id)
+    params.permit(:name, :description, :parent_id, :completed)
   end
 
   def set_project
