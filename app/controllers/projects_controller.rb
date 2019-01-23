@@ -34,6 +34,7 @@ class ProjectsController < ApplicationController
       average_time = 0
       weighted_time = 0
       standard_deviation = 0
+      children = []
 
       @project.children.each do |child|
         estimates_count += child.estimates.count
@@ -44,12 +45,23 @@ class ProjectsController < ApplicationController
           average_time += calculate_time(opt, real, pess).to_f
           weighted_time += calculate_weighted(opt, real, pess).to_f
           standard_deviation += calculate_standard(pess, opt).to_f
+          children << {project: child,
+                       average_time: calculate_time(opt, real, pess).to_f,
+                       weighted_time: calculate_weighted(opt, real, pess).to_f,
+                       total_estimates: estimates_count,
+                       standard_deviation: calculate_standard(pess, opt).to_f  }
+        else
+          children << {project: child,
+                       average_time: 0,
+                       weighted_time: 0,
+                       total_estimates: 0,
+                       standard_deviation: 0}
         end
       end
 
       json_response ({
         project: @project,
-        children: @project.children,
+        children: children,
         estimates: [],
         average_time: average_time,
         weighted_time: weighted_time,

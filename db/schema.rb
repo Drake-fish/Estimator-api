@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_01_22_171235) do
+ActiveRecord::Schema.define(version: 2019_01_23_153431) do
 
   create_table "estimates", force: :cascade do |t|
     t.integer "optimistic", default: 0, null: false
@@ -30,6 +30,7 @@ ActiveRecord::Schema.define(version: 2019_01_22_171235) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "ancestry"
+    t.boolean "completed", default: false, null: false
     t.index ["ancestry"], name: "index_projects_on_ancestry"
   end
 
