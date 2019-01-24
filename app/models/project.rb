@@ -36,9 +36,9 @@ class Project < ApplicationRecord
       child_sql = <<-SQL
         SELECT
           t.child_id as id,
-          ROUND((t.opt + t.real + t.pess)/3, 2) as average,
-          ROUND((t.opt + t.real * 4 + t.pess)/6, 2) as weighted,
-          ROUND((t.pess - t.opt)/6,2) as standard,
+          ROUND((t.opt + t.real + t.pess)/3, 2) as average_time,
+          ROUND((t.opt + t.real * 4 + t.pess)/6, 2) as weighted_time,
+          ROUND((t.pess - t.opt)/6,2) as standard_deviation,
           t.name as name,
           t.description as description,
           t.created_at as created_at,
