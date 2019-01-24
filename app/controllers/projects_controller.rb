@@ -5,9 +5,9 @@ class ProjectsController < ApplicationController
 
   def index
     projects = Project.get_all_projects_and_estimates
-    optimistic = projects.average(:optimistic).to_f
-    realistic = projects.average(:realistic).to_f
-    pessimistic = projects.average(:pessimistic).to_f
+    optimistic = projects.sum(:optimistic).to_f
+    realistic = projects.sum(:realistic).to_f
+    pessimistic = projects.sum(:pessimistic).to_f
     average = calculate_time(optimistic, realistic, pessimistic)
     weighted = calculate_weighted(optimistic, realistic, pessimistic)
     standard_deviation = calculate_standard(pessimistic, optimistic)

@@ -9,9 +9,9 @@ class Project < ApplicationRecord
   def get_parent_calculations(id)
   parent_sql = <<-SQL
     SELECT
-        ROUND((t.opt + t.real + t.pess)/3, 2) AS average,
-        ROUND((t.opt + t.real * 4 + t.pess)/6, 2) AS weighted,
-        ROUND((t.pess - t.opt)/6, 2) AS standard,
+        ROUND((t.opt + t.real + t.pess)/3.0, 2) AS average,
+        ROUND((t.opt + t.real * 4 + t.pess)/6.0, 2) AS weighted,
+        ROUND((t.pess - t.opt)/6.0, 2) AS standard,
         t.*
    FROM (
     SELECT
@@ -38,9 +38,9 @@ class Project < ApplicationRecord
       child_sql = <<-SQL
         SELECT
           t.child_id as id,
-          ROUND((t.opt + t.real + t.pess)/3, 2) as average_time,
-          ROUND((t.opt + t.real * 4 + t.pess)/6, 2) as weighted_time,
-          ROUND((t.pess - t.opt)/6,2) as standard_deviation,
+          ROUND((t.opt + t.real + t.pess)/3.0, 2) as average_time,
+          ROUND((t.opt + t.real * 4 + t.pess)/6.0, 2) as weighted_time,
+          ROUND((t.pess - t.opt)/6.0, 2) as standard_deviation,
           t.name as name,
           t.description as description,
           t.created_at as created_at,
@@ -75,9 +75,9 @@ class Project < ApplicationRecord
   def get_task_calculations(id)
         task_sql = <<-SQL
         SELECT
-           ROUND((SUM(optimistic)/COUNT(optimistic) * 1.0 + SUM(realistic)/COUNT(optimistic) * 1.0 + SUM(pessimistic)/COUNT(optimistic) * 1.0)/ 3.0, 2) as average_time,
-           ROUND((SUM(optimistic)/COUNT(optimistic)* 1.0 + (SUM(realistic)/COUNT(optimistic) * 4.0) + SUM(pessimistic)/COUNT(optimistic)* 1.0)/ 6.0, 2) as weighted_time,
-           ROUND((SUM(pessimistic)/COUNT(pessimistic) * 1.0 - SUM(optimistic)/COUNT(optimistic) * 1.0 )/ 6.0, 2) as standard_deviation
+           ROUND((SUM(optimistic)/COUNT(optimistic) + SUM(realistic)/COUNT(optimistic) + SUM(pessimistic)/COUNT(optimistic))/ 3.0, 2) as average_time,
+           ROUND((SUM(optimistic)/COUNT(optimistic) + (SUM(realistic)/COUNT(optimistic) * 4.0) + SUM(pessimistic)/COUNT(optimistic))/ 6.0, 2) as weighted_time,
+           ROUND((SUM(pessimistic)/COUNT(pessimistic) - SUM(optimistic)/COUNT(optimistic))/ 6.0, 2) as standard_deviation
         from projects p
         join estimates e
         on p.id = e.project_id
