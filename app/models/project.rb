@@ -77,7 +77,7 @@ class Project < ApplicationRecord
         SELECT
            ROUND((SUM(optimistic)/COUNT(optimistic) + SUM(realistic)/COUNT(optimistic) + SUM(pessimistic)/COUNT(optimistic))/ 3.0, 2) as average_time,
            ROUND((SUM(optimistic)/COUNT(optimistic) + SUM(realistic)/COUNT(optimistic) * 4 + SUM(pessimistic)/COUNT(optimistic))/ 3.0, 2) as weighted_time,
-           ROUND((SUM(pessimistic)/COUNT(optimistic) - SUM(optimistic)/COUNT(optimistic) )/ COUNT(optimistic), 2) as standard_deviation
+           ROUND((SUM(pessimistic)/COUNT(pessimistic) - SUM(optimistic)/COUNT(optimistic) )/ 6, 2) as standard_deviation
         from projects p
         join estimates e
         on p.id = e.project_id
