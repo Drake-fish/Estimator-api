@@ -36,18 +36,19 @@ class ProjectsController < ApplicationController
         project: @project,
         children: children,
         estimates: [],
-        average_time: parent_calculations["average"],
-        weighted_time: parent_calculations["weighted"],
-        standard_deviation: parent_calculations["standard"],
-        total_estimates: children.reduce(0) { |sum, project| sum + project["total_estimates"]  }
+        average: parent_calculations.reduce(0) { |sum, project| sum + project["average"].to_f  },
+        weighted: parent_calculations.reduce(0) { |sum, project| sum + project["weighted"].to_f  },
+        standard: parent_calculations.reduce(0) { |sum, project| sum + project["standard"].to_f  },
+        total_estimates: children.reduce(0) { |sum, project| sum + project["total_estimates"].to_i }
       })
     else
       estimates_count = @project.estimates.count
       if estimates_count > 0
-        task_averages = @project.get_task_calculations(@project.id)
-        average = task_averages.reduce(0) { |sum, task| sum + task["average"]  }
-        weighted = task_averages.reduce(0) { |sum, task| sum + task["weighted"]  }
-        standard = task_averages.reduce(0) { |sum, task| sum + task["standard"]  }
+        task_averages = @project.get_task_calculations(@project.id)[0]
+        average = task_averages["average"].to_f
+        weighted = task_averages["weighted"].to_f
+        standard = task_averages["standard"].to_f
+        # average, weighted, standard = task_averages.values.map(&:to_f)
       else
         average = 0
         weighted = 0
