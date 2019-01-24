@@ -10,7 +10,7 @@ class ProjectsController < ApplicationController
     pessimistic = projects.sum(:pessimistic).to_f
     average = calculate_time(optimistic, realistic, pessimistic)
     weighted = calculate_weighted(optimistic, realistic, pessimistic)
-    standard_deviation = calculate_standard(pessimistic, optimistic)
+    standard_deviation = calculate_standard(projects.average(:pessimistic).to_f, projects.average(:optimistic).to_f)
 
     json_response({
       projects: projects,
