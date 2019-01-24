@@ -76,7 +76,7 @@ class Project < ApplicationRecord
             from projects p
             left join estimates e
             on p.id = e.project_id
-            where p.id = #{id}
+            where p.id = id
       SQL
       ActiveRecord::Base.connection.exec_query(task_sql)
   end
