@@ -6,12 +6,13 @@ class Project < ApplicationRecord
   scope :get_all_projects_and_estimates, -> { includes(:estimates ).where(ancestry: nil).order(created_at: :desc) }
   scope :find_project_by_id, -> (params) { includes(:estimates).find(params[:id]) }
 
-  def get_parent_calculations
+  def get_parent_calculations(id)
   parent_sql = <<-SQL
     SELECT
         ROUND((t.opt + t.real + t.pess)/3, 2) AS average,
         ROUND((t.opt + t.real * 4 + t.pess)/6, 2) AS weighted,
-        ROUND((t.pess - t.opt)/6, 2) AS standard
+        ROUND((t.pess - t.opt)/6, 2) AS standard,
+        t.*
    FROM (
     SELECT
           p.id as parent_id,
@@ -26,13 +27,14 @@ class Project < ApplicationRecord
        ON p.id = q.ancestry::int
        JOIN estimates e
        ON q.id = e.project_id
+       WHERE p.id = #{id}
        GROUP BY q.id, p.id, e.optimistic, e.id
        ) as t;
     SQL
     ActiveRecord::Base.connection.exec_query(parent_sql)
   end
 
-  def get_children
+  def get_children(id)
       child_sql = <<-SQL
         SELECT
           t.child_id as id,
@@ -63,6 +65,7 @@ class Project < ApplicationRecord
         ON p.id::int = q.ancestry::int
         JOIN estimates e
         ON q.id = e.project_id
+        WHERE p.id = #{id}
         GROUP BY q.id
       ) AS t;
     SQL
@@ -71,19 +74,15 @@ class Project < ApplicationRecord
 
   def get_task_calculations(id)
         task_sql = <<-SQL
-        SELECT SUM(average) as average, SUM(weighted) as weighted, SUM(standard) as standard
-        FROM (
-            SELECT
-                p.id,
-                ROUND((e.optimistic + e.realistic + e.pessimistic)/3.0, 2) as average,
-                ROUND((e.optimistic + e.realistic * 4 + e.pessimistic)/6.0, 2) as weighted,
-                ROUND((e.pessimistic - e.optimistic)/6.0, 2) as standard
-            FROM projects p
-            LEFT JOIN estimates e
-            ON p.id = e.project_id
-            WHERE p.id = #{id}
-        ) as t
-      SQL
+        SELECT
+           ROUND((SUM(optimistic)/COUNT(optimistic) + SUM(realistic)/COUNT(optimistic) + SUM(pessimistic)/COUNT(optimistic))/ 3.0, 2) as average_time,
+           ROUND((SUM(optimistic)/COUNT(optimistic) + SUM(realistic)/COUNT(optimistic) * 4 + SUM(pessimistic)/COUNT(optimistic))/ 3.0, 2) as weighted_time,
+           ROUND((SUM(pessimistic)/COUNT(optimistic) - SUM(optimistic)/COUNT(optimistic) )/ 6.0, 2) as standard_deviation
+        from projects p
+        join estimates e
+        on p.id = e.project_id
+        where p.id = #{id}
+        SQL
       ActiveRecord::Base.connection.exec_query(task_sql)
   end
 end

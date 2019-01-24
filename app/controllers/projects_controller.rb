@@ -30,8 +30,8 @@ class ProjectsController < ApplicationController
 
   def show
     if @project.root? && @project.children?
-      parent_calculations = @project.get_parent_calculations
-      children = @project.get_children
+      parent_calculations = @project.get_parent_calculations(@project.id)
+      children = @project.get_children(@project.id)
       json_response ({
         project: @project,
         children: children,
@@ -45,9 +45,9 @@ class ProjectsController < ApplicationController
       estimates_count = @project.estimates.count
       if estimates_count > 0
         task_averages = @project.get_task_calculations(@project.id)[0]
-        average = task_averages["average"].to_f
-        weighted = task_averages["weighted"].to_f
-        standard = task_averages["standard"].to_f
+        average = task_averages["average_time"].to_f
+        weighted = task_averages["weighted_time"].to_f
+        standard = task_averages["standard_deviation"].to_f
       else
         average = 0
         weighted = 0
