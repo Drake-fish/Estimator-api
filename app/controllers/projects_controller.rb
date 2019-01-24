@@ -30,63 +30,36 @@ class ProjectsController < ApplicationController
 
   def show
     if @project.root? && @project.children?
-      estimates_count = 0
-      average_time = 0
-      weighted_time = 0
-      standard_deviation = 0
-      children = []
-
-      @project.children.each do |child|
-        estimates_count += child.estimates.count
-        opt = child.estimates.average(:optimistic)
-        real = child.estimates.average(:realistic)
-        pess = child.estimates.average(:pessimistic)
-        if child.estimates.count > 0
-          average_time += calculate_time(opt, real, pess).to_f
-          weighted_time += calculate_weighted(opt, real, pess).to_f
-          standard_deviation += calculate_standard(pess, opt).to_f
-          children << {project: child,
-                       average_time: calculate_time(opt, real, pess).to_f,
-                       weighted_time: calculate_weighted(opt, real, pess).to_f,
-                       total_estimates: child.estimates.count,
-                       standard_deviation: calculate_standard(pess, opt).to_f  }
-        else
-          children << {project: child,
-                       average_time: 0,
-                       weighted_time: 0,
-                       total_estimates: 0,
-                       standard_deviation: 0}
-        end
-      end
-
+      parent_calculations = @project.get_parent_calculations
+      children = @project.get_children
       json_response ({
         project: @project,
         children: children,
         estimates: [],
-        average_time: average_time,
-        weighted_time: weighted_time,
-        standard_deviation: standard_deviation,
-        total_estimates: estimates_count
+        average_time: parent_calculations["average"],
+        weighted_time: parent_calculations["weighted"],
+        standard_deviation: parent_calculations["standard"],
+        total_estimates: children.reduce(0) { |sum, project| sum + project["total_estimates"]  }
       })
-
     else
       estimates_count = @project.estimates.count
       if estimates_count > 0
-        opt = @project.estimates.average(:optimistic)
-        real = @project.estimates.average(:realistic)
-        pess = @project.estimates.average(:pessimistic)
+        task_averages = @project.get_task_calculations(@project.id)
+        average = task_averages.reduce(0) { |sum, task| sum + task["average"]  }
+        weighted = task_averages.reduce(0) { |sum, task| sum + task["weighted"]  }
+        standard = task_averages.reduce(0) { |sum, task| sum + task["standard"]  }
       else
-        opt = 0
-        real = 0
-        pess = 0
+        average = 0
+        weighted = 0
+        standard = 0
       end
       json_response ({
         project: @project,
         children: [],
         estimates: @project.estimates,
-        average_time: calculate_time(opt, real, pess).to_f,
-        weighted_time: calculate_weighted(opt, real, pess).to_f,
-        standard_deviation: calculate_standard(pess, opt).to_f,
+        average_time: average,
+        weighted_time: weighted,
+        standard_deviation: standard,
         total_estimates: estimates_count
       })
     end
@@ -121,6 +94,6 @@ class ProjectsController < ApplicationController
   end
 
   def set_project
-    @project = Project.includes(:estimates).find(params[:id])
+    @project = Project.find_project_by_id(params)
   end
 end
