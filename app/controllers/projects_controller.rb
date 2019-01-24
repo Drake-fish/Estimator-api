@@ -30,15 +30,15 @@ class ProjectsController < ApplicationController
 
   def show
     if @project.root? && @project.children?
-      parent_calculations = @project.get_parent_calculations(@project.id)
+      parent_calculations = @project.get_parent_calculations(@project.id)[0]
       children = @project.get_children(@project.id)
       json_response ({
         project: @project,
         children: children,
         estimates: [],
-        average_time: parent_calculations.reduce(0) { |sum, project| sum + project["average"].to_f  },
-        weighted_time: parent_calculations.reduce(0) { |sum, project| sum + project["weighted"].to_f  },
-        standard_deviation: parent_calculations.reduce(0) { |sum, project| sum + project["standard"].to_f  },
+        average_time: parent_calculations["average"].to_f,
+        weighted_time: parent_calculations["weighted"].to_f,
+        standard_deviation: parent_calculations["standard"].to_f,
         total_estimates: children.reduce(0) { |sum, project| sum + project["total_estimates"].to_i }
       })
     else

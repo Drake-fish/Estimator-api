@@ -9,27 +9,28 @@ class Project < ApplicationRecord
   def get_parent_calculations(id)
   parent_sql = <<-SQL
     SELECT
-        ROUND((t.opt + t.real + t.pess)/3.0, 2) AS average,
-        ROUND((t.opt + t.real * 4 + t.pess)/6.0, 2) AS weighted,
-        ROUND((t.pess - t.opt)/6.0, 2) AS standard,
-        t.*
-   FROM (
-    SELECT
-          p.id as parent_id,
-          e.optimistic as optimistic,
-          q.id as child_id,
-          AVG(e.optimistic) as opt,
-          AVG(e.realistic) as real,
-          AVG(e.pessimistic) as pess,
-          e.id as estimate_id
-       FROM projects p
-       JOIN projects q
-       ON p.id = q.ancestry::int
-       JOIN estimates e
-       ON q.id = e.project_id
-       WHERE p.id = #{id}
-       GROUP BY q.id, p.id, e.optimistic, e.id
-       ) as t;
+        t.parent_id,
+        ROUND(SUM((t.opt + t.real + t.pess)/3.0), 2) AS average,
+        ROUND(SUM((t.opt + t.real * 4 + t.pess)/6.0), 2) AS weighted,
+        ROUND(AVG((t.pess - t.opt)/6.0), 2) AS standard
+    FROM (
+      SELECT
+            p.id as parent_id,
+            e.optimistic as optimistic,
+            q.id as child_id,
+            AVG(e.optimistic) as opt,
+            AVG(e.realistic) as real,
+            AVG(e.pessimistic) as pess,
+            e.id as estimate_id
+         FROM projects p
+         JOIN projects q
+         ON p.id = q.ancestry::int
+         JOIN estimates e
+         ON q.id = e.project_id
+         WHERE p.id = 1
+         GROUP BY q.id, p.id, e.optimistic, e.id
+         ) as t
+       GROUP BY 1;
     SQL
     ActiveRecord::Base.connection.exec_query(parent_sql)
   end
