@@ -76,7 +76,7 @@ class Project < ApplicationRecord
         task_sql = <<-SQL
         SELECT
            ROUND((SUM(optimistic)/COUNT(optimistic) + SUM(realistic)/COUNT(optimistic) + SUM(pessimistic)/COUNT(optimistic))/ 3.0, 2) as average_time,
-           ROUND((SUM(optimistic)/COUNT(optimistic) + SUM(realistic)/COUNT(optimistic) * 4 + SUM(pessimistic)/COUNT(optimistic))/ 3.0, 2) as weighted_time,
+           ROUND((SUM(optimistic)/COUNT(optimistic) + (SUM(realistic)/COUNT(optimistic) * 4) + SUM(pessimistic)/COUNT(optimistic))/ 6.0, 2) as weighted_time,
            ROUND((SUM(pessimistic)/COUNT(pessimistic) - SUM(optimistic)/COUNT(optimistic) )/ 6.0, 2) as standard_deviation
         from projects p
         join estimates e
