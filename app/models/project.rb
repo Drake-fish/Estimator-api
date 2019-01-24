@@ -27,7 +27,7 @@ class Project < ApplicationRecord
          ON p.id = q.ancestry::int
          JOIN estimates e
          ON q.id = e.project_id
-         WHERE p.id = 1
+         WHERE p.id = #{id}
          GROUP BY q.id, p.id, e.optimistic, e.id
          ) as t
        GROUP BY 1;
