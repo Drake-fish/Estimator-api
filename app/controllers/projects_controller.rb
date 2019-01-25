@@ -51,7 +51,7 @@ class ProjectsController < ApplicationController
           created_at: child.created_at,
           updated_at: child.updated_at,
           completed: child.completed,
-          estimates: child.estimates.count
+          total_estimates: child.estimates.count
         }
         if child.estimates.count > 0
           child.estimates.each do |estimate|
