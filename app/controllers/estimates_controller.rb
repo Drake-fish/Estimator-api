@@ -11,9 +11,12 @@ class EstimatesController < ApplicationController
   end
 
   def create
-    #change back to create regular.
-    @project.estimates.create(estimate_params)
-    json_response(@project, :created)
+    estimate = @project.estimates.new(estimate_params)
+    if estimate.save
+      json_response(estimate, :created)
+    else
+      json_response({status:422, message: estimate.errors.full_messages })
+    end
   end
 
   def update

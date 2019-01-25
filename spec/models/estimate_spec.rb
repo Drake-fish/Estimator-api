@@ -10,5 +10,4 @@ RSpec.describe Estimate, type: :model do
   it { should validate_presence_of(:optimistic) }
   it { should validate_presence_of(:realistic) }
   it { should validate_presence_of(:pessimistic) }
-  it { should validate_presence_of(:note) }
 end

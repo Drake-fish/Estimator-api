@@ -2,144 +2,85 @@ require 'rails_helper'
 
 RSpec.describe 'Projects API', type: :request do
   let!(:projects) {create_list(:project, 10)}
-  let(:project_id) {projects.first.id}
-  let!(:estimates) { create_list(:estimate, 20, project_id: projects.first.id) }
-  let(:id) { estimates.first.id }
-
+  let(:project_id) {projects.last.id}
+  let!(:id) { estimates.first.id }
+  let!(:estimates) { create_list(:estimate, 1, project_id: project_id ) }
+  let!(:estimate) { create :estimate, project_id: project_id }
 
   describe 'GET /projects' do
     before {get '/projects'}
 
     it 'returns projects' do
       expect(json).not_to be_empty
-      expect(json.size).to eq(10)
+      expect(json.size).to eq(5)
     end
-
     it 'returns status code 200' do
       expect(response).to have_http_status(200)
     end
   end
 
   describe 'GET /projects/:id' do
-    before { get "/projects/#{project_id}" }
+    before(:each) do
+      parent_project_id = projects.first.id
+      task = create(:project, parent_id: parent_project_id)
+      task2 = create(:project, parent_id: parent_project_id)
+      task3 = create(:project, parent_id: parent_project_id)
+      create(:estimate, project_id: task.id, optimistic: 3, realistic: 5, pessimistic: 7 )
+      create(:estimate, project_id: task.id, optimistic: 2, realistic: 6, pessimistic: 8 )
+      create(:estimate, project_id: task2.id, optimistic: 1, realistic: 3, pessimistic: 9 )
+      create(:estimate, project_id: task2.id, optimistic: 2, realistic: 4, pessimistic: 10 )
+      create(:estimate, project_id: task3.id, optimistic: 3, realistic: 5, pessimistic: 9 )
+      create(:estimate, project_id: task3.id, optimistic: 5, realistic: 7, pessimistic: 10 )
+      get "/projects/#{parent_project_id}"
+    end
 
     context 'when the record exists' do
-      it 'returns the project' do
-        expect(json).not_to be_empty
-        expect(json['id']).to eq(project_id)
+    #   it 'returns the project' do
+    #     expect(json).not_to be_empty
+    #     expect(json['project']['id']).to eq(project_id)
+    #   end
+    #
+    #   it 'returns status code 200' do
+    #     expect(response).to have_http_status(200)
+    #   end
+
+      it 'returns the correct parent weighted average' do
+        expect(json["weighted_time"]).to eq(15.76)
+
+      end
+      it 'returns the correct parent average time' do
+        expect(json["average_time"]).to eq(16.5)
       end
 
-      it 'returns status code 200' do
-        expect(response).to have_http_status(200)
+      it 'returns the correct parent standard deviation' do
+        expect(json["standard_deviation"]).to eq(1.03)
       end
+
+      it 'returns the correct child average time' do
+        expect(json["children"][0]["average_time"]).to eq(5.17)
+      end
+
+      it 'returns the correct child weighted time' do
+        expect(json["children"][0]["weighted_time"]).to eq(5.34)
+      end
+
+      it 'returns the correct child standard deviation' do
+        expect(json["children"][0]["standard_deviation"]).to eq(0.84)
+      end
+
+
     end
 
     context 'when the record does not exist' do
-      let(:project_id) { 100 }
+      let(:project_id) { 0 }
 
-      it 'returns status code of 404' do
-        expect(response).to have_http_status(404)
-      end
-
-      it 'returns a not found message' do
-        expect(response.body).to match(/Couldn't find Project with 'id'=100/)
-      end
-    end
-  end
-
-  describe 'GET /calculate/:id' do
-    before { get "/calculate/#{id}"}
-
-    context 'when the record exists' do
-      it 'returns the estimate' do
-        expect(json).not_to be_empty
-      end
-      it 'returns a status code of 200' do
-        expect(response).to have_http_status(200)
-      end
-    end
-
-    context 'when the record does not exist' do
-      let(:id) { 200 }
-      it 'returns status code of 404' do
-        expect(response).to have_http_status(404)
-      end
-
-      it 'returns a not found message' do
-        expect(response.body).to match(/Couldn't find Estimate with 'id'=200/)
-      end
-    end
-  end
-
-  describe 'GET /calculate/:id/weighted' do
-    before { get "/calculate/#{id}/weighted"}
-
-    context 'when the record exists' do
-      it 'returns the estimate' do
-        expect(json).not_to be_empty
-      end
-      it 'returns a status code of 200' do
-        expect(response).to have_http_status(200)
-      end
-    end
-
-    context 'when the record does not exist' do
-      let(:id) { 200 }
-      it 'returns status code of 404' do
-        expect(response).to have_http_status(404)
-      end
-
-      it 'returns a not found message' do
-        expect(response.body).to match(/Couldn't find Estimate with 'id'=200/)
-      end
-    end
-  end
-
-  describe 'GET /calculate/all/:id' do
-    before { get "/calculate/all/#{id}"}
-
-    context 'when the record exists' do
-      it 'returns the averages added together' do
-        expect(json).to_not be_empty
-      end
-      it 'returns a status code of 200' do
-        expect(response).to have_http_status(200)
-      end
-    end
-
-    context 'when the record does not exist' do
-      let(:id) { 200 }
-      it 'returns status code of 404' do
-        expect(response).to have_http_status(404)
-      end
-
-      it 'returns a not found message' do
-        expect(response.body).to match(/Couldn't find Project with 'id'=200/)
-      end
-    end
-  end
-
-  describe 'GET /calculate/all/weighted/:id' do
-    before { get "/calculate/all/weighted/#{id}"}
-
-    context 'when the record exists' do
-      it 'returns the averages added together' do
-        expect(json).to_not be_empty
-      end
-      it 'returns a status code of 200' do
-        expect(response).to have_http_status(200)
-      end
-    end
-
-    context 'when the record does not exist' do
-      let(:id) { 200 }
-      it 'returns status code of 404' do
-        expect(response).to have_http_status(404)
-      end
-
-      it 'returns a not found message' do
-        expect(response.body).to match(/Couldn't find Project with 'id'=200/)
-      end
+      # it 'returns status code of 404' do
+      #   expect(response).to have_http_status(404)
+      # end
+      #
+      # it 'returns a not found message' do
+      #   expect(response.body).to match(/Couldn't find Project with 'id'=100/)
+      # end
     end
   end
 
@@ -165,11 +106,11 @@ RSpec.describe 'Projects API', type: :request do
       before { post '/projects', params: { name: 'Boo!' }}
 
       it 'returns status code 422' do
-        expect(response).to have_http_status(422)
+          expect(json["status"]).to eq(422)
       end
 
       it 'returns a validation failure message' do
-        expect(response.body).to match(/Validation failed: Description can't be blank/)
+        expect(json["message"][0]).to eq("Description can't be blank")
       end
     end
   end

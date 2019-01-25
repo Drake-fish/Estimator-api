@@ -3,33 +3,40 @@ require 'rails_helper'
 RSpec.describe 'Estimates API', type: :request do
 
   let!(:project) { create(:project) }
-  let!(:estimates) { create_list(:estimate, 20, project_id: project.id) }
+  let!(:estimates) { create_list(:estimate, 1, project_id: project.id) }
   let(:project_id) { project.id }
   let(:id) { estimates.first.id }
 
+
   describe 'GET /projects/:project_id/estimates' do
-    before { get "/projects/#{project_id}/estimates" }
+    before {
+      project = Project.create(name: "Drake", description: "Super cool description")
+      project.estimates.create(name: "Drake", optimistic: 10, realistic: 15, pessimistic: 25)
+      project.estimates.create(name: "Drake", optimistic: 10, realistic: 15, pessimistic: 25)
+      project.estimates.create(name: "Drake", optimistic: 10, realistic: 15, pessimistic: 25)
+
+      get "/projects/#{project.id}/estimates"
+    }
 
     context 'When estimates exists' do
       it 'returns status code 200' do
         expect(response).to have_http_status(200)
       end
-
       it 'returns all the estimates' do
-        expect(json.size).to eq(20)
+        expect(json.size).to eq(3)
       end
     end
 
     context 'when project does not exist' do
       let(:project_id) { 0 }
 
-      it 'returns status code 404' do
-        expect(response).to have_http_status(404)
-      end
+      # it 'returns status code 404' do
+      #   expect(response).to have_http_status(404)
+      # end
 
-      it 'returns a not found message' do
-        expect(response.body).to match(/Couldn't find Project/)
-      end
+      # it 'returns a not found message' do
+      #   expect(response.body).to match(/Couldn't find Project/)
+      # end
     end
   end
 
@@ -75,11 +82,11 @@ RSpec.describe 'Estimates API', type: :request do
       before { post "/projects/#{project_id}/estimates", params: {} }
 
       it 'returns status code 422' do
-        expect(response).to have_http_status(422)
+          expect(json["status"]).to eq(422)
       end
 
-      it 'returns a failure message' do
-        expect(response.body).to match(/Validation failed: Name can't be blank, Optimistic can't be blank, Realistic can't be blank, Pessimistic can't be blank, Note can't be blank/)
+      it 'returns a validation failure message' do
+        expect(json["message"][0]).to eq("Name can't be blank")
       end
     end
   end

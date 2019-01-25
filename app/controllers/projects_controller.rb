@@ -24,34 +24,68 @@ class ProjectsController < ApplicationController
 
 
   def create
-    @project = Project.create(project_params)
-    json_response(@project, :created)
+    @project = Project.new(project_params)
+    if @project.save
+      json_response(@project, :created)
+    else
+      json_response({status:422, message: @project.errors.full_messages })
+    end
   end
 
   def show
+    average = 0
+    weighted = 0
+    standard = 0
+    estimates = 0
+    children = []
     if @project.root? && @project.children?
-      parent_calculations = @project.get_parent_calculations(@project.id)[0]
-      children = @project.get_children(@project.id)
+      projects = @project.children
+      projects.each do |child|
+         task = {
+          id: child.id,
+          name: child.name,
+          description: child.description,
+          average_time: 0,
+          weighted_time: 0,
+          standard_deviation: 0,
+          estimates: child.estimates.count
+        }
+        if child.estimates.count > 0
+          child.estimates.each do |estimate|
+            task[:average_time] += calculate_time(estimate.optimistic, estimate.realistic, estimate.pessimistic).to_f
+            task[:weighted_time] += calculate_weighted(estimate.optimistic, estimate.realistic, estimate.pessimistic).to_f
+            task[:standard_deviation] += calculate_standard(estimate.pessimistic, estimate.optimistic).to_f
+          end
+          task[:average_time] = (task[:average_time] / task[:estimates]).round(2)
+          task[:weighted_time] = (task[:weighted_time] / task[:estimates]).round(2)
+          task[:standard_deviation] = (task[:standard_deviation] / task[:estimates]).round(2)
+        end
+
+        children << task
+      end
       json_response ({
         project: @project,
         children: children,
         estimates: [],
-        average_time: parent_calculations["average"].to_f,
-        weighted_time: parent_calculations["weighted"].to_f,
-        standard_deviation: parent_calculations["standard"].to_f,
-        total_estimates: children.reduce(0) { |sum, project| sum + project["total_estimates"].to_i }
+        average_time: children.reduce(0) { |sum, child| sum + child[:average_time]}.round(2),
+        weighted_time: children.reduce(0) { |sum, child| sum + child[:weighted_time]}.round(2),
+        standard_deviation: (children.reduce(0) { |sum, child| sum + child[:standard_deviation]} / children.length).round(2),
+        total_estimates: estimates
       })
     else
+      average = 0
+      weighted = 0
+      standard = 0
       estimates_count = @project.estimates.count
       if estimates_count > 0
-        task_averages = @project.get_task_calculations(@project.id)[0]
-        average = task_averages["average_time"].to_f
-        weighted = task_averages["weighted_time"].to_f
-        standard = task_averages["standard_deviation"].to_f
-      else
-        average = 0
-        weighted = 0
-        standard = 0
+        @project.estimates.each do |estimate|
+          average += calculate_time(estimate.optimistic, estimate.realistic, estimate.pessimistic).to_f
+          weighted += calculate_weighted(estimate.optimistic, estimate.realistic, estimate.pessimistic).to_f
+          standard += calculate_standard(estimate.pessimistic, estimate.optimistic).to_f
+        end
+        average = (average / estimates_count).round(2)
+        weighted = (weighted / estimates_count).round(2)
+        standard = (standard / estimates_count).round(2)
       end
       json_response ({
         project: @project,
@@ -78,15 +112,15 @@ class ProjectsController < ApplicationController
   private
 
   def calculate_time(low, real, high)
-    ((low + real + high) / 3).round(2)
+    ((low + real + high) / 3.0).round(2)
   end
 
   def calculate_weighted(low, real, high)
-    ((low + real * 4 + high) / 6).round(2)
+    ((low + real * 4 + high) / 6.0).round(2)
   end
 
   def calculate_standard(high, low)
-    ((high - low)/6).round(2)
+    ((high - low)/6.0).round(2)
   end
 
   def project_params
