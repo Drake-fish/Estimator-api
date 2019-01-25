@@ -58,6 +58,7 @@ class ProjectsController < ApplicationController
             task[:average_time] += calculate_time(estimate.optimistic, estimate.realistic, estimate.pessimistic).to_f
             task[:weighted_time] += calculate_weighted(estimate.optimistic, estimate.realistic, estimate.pessimistic).to_f
             task[:standard_deviation] += calculate_standard(estimate.pessimistic, estimate.optimistic).to_f
+            estimates += child.estimates.count
           end
           task[:average_time] = (task[:average_time] / task[:total_estimates]).round(2)
           task[:weighted_time] = (task[:weighted_time] / task[:total_estimates]).round(2)
