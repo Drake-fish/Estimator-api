@@ -48,6 +48,9 @@ class ProjectsController < ApplicationController
           average_time: 0,
           weighted_time: 0,
           standard_deviation: 0,
+          created_at: child.created_at,
+          updated_at: child.updated_at,
+          completed: child.completed,
           estimates: child.estimates.count
         }
         if child.estimates.count > 0
